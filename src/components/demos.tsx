@@ -28,6 +28,7 @@ import {
   parseMobile,
 } from '@ph-dev-utils/core';
 import { incomeTaxGraduated, incomeTax8 } from '@ph-dev-utils/bir';
+import { findBank, listBanks } from '@ph-dev-utils/banks';
 import { netTakeHome } from '@ph-dev-utils/payroll';
 import { formatFilipino, isBusinessDay, addBusinessDays } from '@ph-dev-utils/dates';
 import { faker } from '@ph-dev-utils/faker';
@@ -229,6 +230,61 @@ function BirDemo() {
   );
 }
 
+/* ── banks ──────────────────────────────────────────────────────────────── */
+const BANK_COUNT = listBanks().length;
+function BanksDemo() {
+  const [raw, setRaw] = useState('BDO');
+  const bank = findBank(raw.trim());
+  return (
+    <div className="grid gap-4 sm:grid-cols-2">
+      <div className="space-y-3">
+        <Field label="Bank, brand, or SWIFT" hint="try “Metrobank”, “GCash”, “UBPHPHMM”, “HSBC”">
+          <Input value={raw} onChange={(e) => setRaw(e.target.value)} />
+        </Field>
+        <p className="text-xs text-slate-500">
+          {BANK_COUNT} institutions — universal/commercial (incl. foreign branches), thrift, rural,
+          digital banks &amp; e-wallets. SWIFT shown only where sourced.
+        </p>
+      </div>
+      <div className="space-y-1">
+        {bank ? (
+          <>
+            <Row k="Name" v={<span className="text-right">{bank.name}</span>} strong />
+            <Row
+              k="Type"
+              v={
+                <span className="flex flex-wrap justify-end gap-1">
+                  <Tag color="blue">{bank.type.replace('_', '/')}</Tag>
+                  {bank.foreign && <Tag color="slate">foreign branch</Tag>}
+                </span>
+              }
+            />
+            <Row
+              k="SWIFT / BIC"
+              v={
+                bank.swift ? (
+                  <span className="flex items-center gap-1">
+                    {bank.swift}
+                    <Tag color={bank.swiftConfidence === 'verified' ? 'blue' : 'amber'}>
+                      {bank.swiftConfidence}
+                    </Tag>
+                  </span>
+                ) : (
+                  <span className="text-slate-400">not sourced</span>
+                )
+              }
+            />
+            <Row k="InstaPay" v={<Verdict ok={bank.instapay}>{bank.instapay ? (bank.instapayReceiverOnly ? 'receive only' : 'yes') : 'no'}</Verdict>} />
+            <Row k="PESONet" v={<Verdict ok={bank.pesonet}>{bank.pesonet ? 'yes' : 'no'}</Verdict>} />
+          </>
+        ) : (
+          <p className="self-center text-sm text-slate-500">No match — try a bank name, brand, or SWIFT code.</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /* ── dates ──────────────────────────────────────────────────────────────── */
 function toDate(s: string): Date | null {
   const [y, m, d] = s.split('-').map(Number);
@@ -390,6 +446,17 @@ r.sss.employeeShare;  r.philHealth.employee;  r.netAfterTax;`,
 
 incomeTaxGraduated(500000).tax;   // 42500
 incomeTax8(500000);               // { tax: 20000, eligible: true, ... }`,
+  },
+  {
+    id: 'banks',
+    title: 'banks · SWIFT & rails lookup',
+    blurb: 'Look up any PH bank or e-wallet — SWIFT/BIC + InstaPay/PESONet.',
+    Demo: BanksDemo,
+    code: `import { findBank } from '@ph-dev-utils/banks';
+
+findBank('Metrobank');   // { swift: 'MBTCPHMM', instapay: true, pesonet: true, ... }
+findBank('GCash');       // { type: 'ewallet', instapay: true, ... }
+findBank('UBPHPHMM');    // UnionBank (by SWIFT code)`,
   },
   {
     id: 'dates',

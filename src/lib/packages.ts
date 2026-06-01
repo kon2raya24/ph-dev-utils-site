@@ -122,6 +122,22 @@ export const PACKAGES: FamilyPackage[] = [
     live: true,
   },
   {
+    id: 'banks',
+    npm: '@ph-dev-utils/banks',
+    php: 'phdevutils/banks',
+    version: '0.1.0',
+    title: 'banks',
+    tagline: 'Bank & e-money registry — SWIFT/BIC + InstaPay/PESONet.',
+    highlights: [
+      '158 institutions: U/KB (incl. foreign branches), thrift, rural, digital, e-wallets',
+      'SWIFT/BIC with per-entry confidence (verified / single-source)',
+      'InstaPay & PESONet participation flags (BSP lists, dated)',
+      'findBank / findBySwift / validateBIC / parseBIC',
+    ],
+    github: `${GH}/ph-banks`,
+    live: true,
+  },
+  {
     id: 'postal',
     npm: '@ph-dev-utils/postal',
     php: 'phdevutils/postal',

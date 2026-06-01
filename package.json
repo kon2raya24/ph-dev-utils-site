@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@ph-dev-utils/address-react": "^0.3.0",
+    "@ph-dev-utils/banks": "^0.1.0",
     "@ph-dev-utils/bir": "^0.2.0",
     "@ph-dev-utils/core": "^0.5.0",
     "@ph-dev-utils/dates": "^0.1.1",
