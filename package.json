@@ -1,0 +1,32 @@
+{
+  "name": "ph-dev-utils-site",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Landing site + live playground for the @ph-dev-utils family of Filipino developer utilities (JS/TS + PHP).",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@ph-dev-utils/address-react": "^0.3.0",
+    "@ph-dev-utils/bir": "^0.2.0",
+    "@ph-dev-utils/core": "^0.5.0",
+    "@ph-dev-utils/dates": "^0.1.1",
+    "@ph-dev-utils/faker": "^0.3.0",
+    "@ph-dev-utils/payroll": "^0.3.0",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "autoprefixer": "^10.5.0",
+    "postcss": "^8.5.15",
+    "tailwindcss": "^3.4.19",
+    "typescript": "~6.0.2",
+    "vite": "^8.0.12"
+  }
+}
