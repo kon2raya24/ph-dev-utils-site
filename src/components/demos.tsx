@@ -34,6 +34,9 @@ import { formatFilipino, isBusinessDay, addBusinessDays } from '@ph-dev-utils/da
 import { faker } from '@ph-dev-utils/faker';
 import { PhAddressPicker, type AddressValue } from '@ph-dev-utils/address-react';
 import '@ph-dev-utils/address-react/theme.css';
+import { findCoord, distanceKm, nearestCity } from '@ph-dev-utils/geo';
+import { search as psicSearch } from '@ph-dev-utils/psic';
+import { validateSEC, parseSEC } from '@ph-dev-utils/business';
 import { Card, Code, Field, Input, Row, Tag, Verdict, peso } from './ui';
 
 /* ── core: peso ─────────────────────────────────────────────────────────── */
@@ -285,6 +288,103 @@ function BanksDemo() {
   );
 }
 
+/* ── geo ────────────────────────────────────────────────────────────────── */
+function GeoDemo() {
+  const [from, setFrom] = useState('Manila');
+  const [to, setTo] = useState('Cebu City');
+  const a = findCoord(from.trim());
+  const b = findCoord(to.trim());
+  const dist = a && b ? distanceKm(a.cityMunCode, b.cityMunCode) : null;
+  const near = useMemo(() => {
+    if (!a) return [];
+    return nearestCity(a.cityMunCode, 4)
+      .filter((c) => c.cityMunCode !== a.cityMunCode)
+      .slice(0, 3);
+  }, [a?.cityMunCode]);
+  return (
+    <div className="grid gap-4 sm:grid-cols-2">
+      <div className="space-y-3">
+        <Field label="From" hint="city name or 6-digit PSGC code">
+          <Input value={from} onChange={(e) => setFrom(e.target.value)} />
+        </Field>
+        <Field label="To" hint="“City of X” / “X City” both match">
+          <Input value={to} onChange={(e) => setTo(e.target.value)} />
+        </Field>
+      </div>
+      <div className="space-y-1">
+        <Row k="From" v={a ? <span className="text-right">{a.name}</span> : <span className="text-slate-400">no match</span>} />
+        <Row k="To" v={b ? <span className="text-right">{b.name}</span> : <span className="text-slate-400">no match</span>} />
+        <Row k="distanceKm" v={dist != null ? `${dist.toFixed(1)} km` : '—'} strong />
+        <div className="my-1 border-t border-slate-100" />
+        <span className="block text-xs font-semibold text-slate-500">3 nearest to “From”</span>
+        {near.length ? (
+          near.map((c) => <Row key={c.cityMunCode} k={<span className="text-left">{c.name}</span>} v={`${c.distanceKm.toFixed(1)} km`} />)
+        ) : (
+          <p className="text-sm text-slate-400">—</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ── psic ───────────────────────────────────────────────────────────────── */
+function PsicDemo() {
+  const [q, setQ] = useState('computer');
+  const r = useMemo(() => psicSearch(q.trim()), [q]);
+  const empty = r.sections.length === 0 && r.divisions.length === 0;
+  return (
+    <div className="grid gap-4 sm:grid-cols-2">
+      <div className="space-y-3">
+        <Field label="Search industries" hint="keyword, section letter (A–U), or 2-digit code">
+          <Input value={q} onChange={(e) => setQ(e.target.value)} />
+        </Field>
+        <p className="text-xs text-slate-500">
+          PSIC 2009 — 21 sections, 88 divisions. Pair with{' '}
+          <code className="rounded bg-slate-100 px-1">business</code> to tag a company’s industry.
+        </p>
+      </div>
+      <div className="space-y-1">
+        {r.sections.map((s) => (
+          <Row key={s.code} k={<Tag color="blue">§ {s.code}</Tag>} v={<span className="text-right">{s.title}</span>} />
+        ))}
+        {r.divisions.slice(0, 6).map((d) => (
+          <Row key={d.code} k={<span className="font-mono">{d.code}</span>} v={<span className="text-right">{d.title}</span>} />
+        ))}
+        {empty && <p className="self-center text-sm text-slate-400">No match.</p>}
+        {r.divisions.length > 6 && (
+          <p className="pt-1 text-xs text-slate-500">+{r.divisions.length - 6} more divisions…</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ── business: SEC reg number ─────────────────────────────────────────────── */
+function BusinessDemo() {
+  const [raw, setRaw] = useState('CS2019-12345');
+  const valid = raw.trim() ? validateSEC(raw) : null;
+  const parsed = parseSEC(raw);
+  return (
+    <div className="grid gap-4 sm:grid-cols-2">
+      <div className="space-y-3">
+        <Field label="SEC registration number" hint="try CS2019-12345, A199912345, PG2018-00042">
+          <Input value={raw} onChange={(e) => setRaw(e.target.value)} />
+        </Field>
+        <p className="text-xs text-slate-500">
+          Format-level recognition only — not a registry lookup. Confirm a company against the SEC.
+        </p>
+      </div>
+      <div className="space-y-1">
+        <Row k="valid?" v={valid === null ? '—' : <Verdict ok={valid}>{valid ? 'valid' : 'invalid'}</Verdict>} strong />
+        <Row k="prefix" v={parsed ? <Tag color="blue">{parsed.prefix}</Tag> : '—'} />
+        <Row k="entity type" v={parsed ? <span className="text-right">{parsed.entityLabel}</span> : '—'} />
+        <Row k="year" v={parsed ? String(parsed.year) : '—'} />
+        <Row k="canonical" v={parsed ? parsed.formatted : '—'} />
+      </div>
+    </div>
+  );
+}
+
 /* ── dates ──────────────────────────────────────────────────────────────── */
 function toDate(s: string): Date | null {
   const [y, m, d] = s.split('-').map(Number);
@@ -457,6 +557,36 @@ incomeTax8(500000);               // { tax: 20000, eligible: true, ... }`,
 findBank('Metrobank');   // { swift: 'MBTCPHMM', instapay: true, pesonet: true, ... }
 findBank('GCash');       // { type: 'ewallet', instapay: true, ... }
 findBank('UBPHPHMM');    // UnionBank (by SWIFT code)`,
+  },
+  {
+    id: 'geo',
+    title: 'geo · distance & nearest city',
+    blurb: 'Coordinates for every PSGC city + haversine distance / nearest-city.',
+    Demo: GeoDemo,
+    code: `import { distanceKm, nearestCity } from '@ph-dev-utils/geo';
+
+distanceKm('Manila', 'Cebu City');   // ~570 (km)
+nearestCity('133900', 3);            // 3 nearest cities to Manila`,
+  },
+  {
+    id: 'psic',
+    title: 'psic · industry classification',
+    blurb: 'Search the PSIC 2009 sections & divisions; map a code to its section.',
+    Demo: PsicDemo,
+    code: `import { search, sectionOf } from '@ph-dev-utils/psic';
+
+search('computer').divisions;   // [{ code: '26', … }, { code: '62', … }]
+sectionOf('62')?.title;         // 'Information and communication'`,
+  },
+  {
+    id: 'business',
+    title: 'business · SEC reg number',
+    blurb: 'Validate & parse a Philippine SEC registration number.',
+    Demo: BusinessDemo,
+    code: `import { validateSEC, parseSEC } from '@ph-dev-utils/business';
+
+validateSEC('CS2019-12345');         // true
+parseSEC('CS2019-12345');            // { prefix:'CS', year:2019, entityType:'corporation', … }`,
   },
   {
     id: 'dates',
